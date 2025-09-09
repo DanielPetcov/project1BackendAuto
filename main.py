@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
@@ -12,6 +13,18 @@ load_dotenv()
 
 app = FastAPI()
 
+origins = [
+    'http://localhost:3000',
+    'https://project1-auto.vercel.app'
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
@@ -41,6 +54,7 @@ async def get_cars(
     make: Optional[str] = Query(None, description="Filter by car make"),
     model: Optional[str] = Query(None, description="Filter by car model"),
     year: Optional[int] = Query(None, description="Filter by manufacturing year"),
+    fuel: Optional[str] = Query(None, description="Filter by fuel type"),
     limit: int = Query(10, ge=1, le=100, description="Limit number of results"),
     skip: int = Query(0, ge=0, description="Number of results to skip")
 ):
@@ -53,6 +67,9 @@ async def get_cars(
 
         if model:
             filter_dict['model'] = {"$regex" : model, "$options" : "i"}
+
+        if fuel:
+            filter_dict['fuel_type'] = {"$regex": fuel, "$options": "i"}
 
         if year:
             filter_dict['year'] = year
